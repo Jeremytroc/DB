@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guía Práctica Power BI · MINEDUC · Ofimática</title>
+  <meta name="description" content="Guía pedagógica paso a paso para construir un Dashboard Educativo en Power BI con datos públicos del MINEDUC de Chile. Material universitario de Análisis de Datos." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════════
+       TOKENS DE DISEÑO — Paleta Santo Tomás (verde)
+    ═══════════════════════════════════════════════ */
+    :root {
+      --bg-base:       #0c120e;
+      --bg-surface:    #111a14;
+      --bg-card:       #172010;
+      --bg-card-hover: #1e2d18;
+      --bg-input:      #1c2a17;
+
+      /* Verde Santo Tomás */
+      --green-950: #0a1f10;
+      --green-900: #0f2d18;
+      --green-800: #174223;
+      --green-700: #1e5c30;
+      --green-600: #27894a;
+      --green-500: #30b85e;   /* color principal */
+      --green-400: #48d47a;
+      --green-300: #7ee8a2;
+      --green-200: #b5f5cc;
+      --green-glow: rgba(48, 184, 94, 0.16);
+
+      /* Dorado para acentos cálidos (complemento del verde) */
+      --accent-gold:   #e8b94a;
+      --accent-red:    #f05252;
+      --accent-purple: #a78bfa;
+      --accent-teal:   #34d1c0;
+
+      --text-primary:   #e4f0e8;
+      --text-secondary: #8fb89d;
+      --text-muted:     #456050;
+
+      --border-subtle: rgba(255,255,255,0.055);
+      --border-active: rgba(48, 184, 94, 0.38);
+
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+
+      --shadow-card: 0 4px 24px rgba(0,0,0,0.4);
+      --shadow-glow: 0 0 30px rgba(48, 184, 94, 0.12);
+
+      --nav-width: 266px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Nunito', sans-serif;
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════════
+       ANIMACIONES
+    ═══════════════════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes slideInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 18px rgba(48,184,94,0.2); }
+      50%       { box-shadow: 0 0 32px rgba(48,184,94,0.45); }
+    }
+    @keyframes dotBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ═══════════════════════════════════════════════
+       MENÚ LATERAL FLOTANTE
+    ═══════════════════════════════════════════════ */
+    #sidebar {
+      position: fixed;
+      top: 0; left: 0;
+      width: var(--nav-width);
+      height: 100vh;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+      transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      animation: slideInLeft 0.5s ease-out;
+    }
+
+    .sidebar-logo {
+      padding: 26px 22px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .sidebar-logo .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--green-900), var(--green-700));
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      font-weight: 700;
+      font-size: 0.88rem;
+      color: #fff;
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    .sidebar-logo .logo-badge .icon { font-size: 1.15rem; }
+    .sidebar-subtitle {
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    nav { flex: 1; overflow-y: auto; padding: 14px 10px; }
+    nav::-webkit-scrollbar { width: 4px; }
+    nav::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 99px; }
+
+    .nav-section-label {
+      font-size: 0.63rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 14px 12px 6px;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 13px;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.87rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .nav-link:hover { background: var(--bg-card); color: var(--text-primary); }
+    .nav-link.active {
+      background: var(--green-glow);
+      color: var(--green-400);
+    }
+    .nav-link.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      background: var(--green-500);
+      border-radius: 0 3px 3px 0;
+    }
+    .nav-link .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--green-800);
+      color: var(--green-300);
+      font-size: 0.6rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+
+    .sidebar-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* Toggle button mobile */
+    #sidebar-toggle {
+      display: none;
+      position: fixed;
+      top: 14px; left: 14px;
+      z-index: 200;
+      background: var(--green-700);
+      border: none;
+      border-radius: var(--radius-md);
+      color: #fff;
+      width: 42px; height: 42px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: var(--shadow-card);
+      transition: background 0.2s;
+    }
+    #sidebar-toggle:hover { background: var(--green-500); }
+    #sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 99;
+    }
+
+    /* ═══════════════════════════════════════════════
+       LAYOUT PRINCIPAL
+    ═══════════════════════════════════════════════ */
+    .main-wrapper {
+      margin-left: var(--nav-width);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ═══════════════════════════════════════════════
+       HERO HEADER
+    ═══════════════════════════════════════════════ */
+    .hero {
+      background: linear-gradient(135deg, var(--green-900) 0%, #081a0f 45%, #0c120e 100%);
+      padding: 62px 56px 52px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.7s ease-out;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 380px; height: 380px;
+      background: radial-gradient(circle, rgba(48,184,94,0.12) 0%, transparent 68%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green-500), transparent);
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(48,184,94,0.1);
+      border: 1px solid rgba(48,184,94,0.28);
+      border-radius: 99px;
+      padding: 5px 14px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      color: var(--green-300);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 22px;
+    }
+    .hero-eyebrow .dot {
+      width: 7px; height: 7px;
+      background: var(--green-400);
+      border-radius: 50%;
+      animation: dotBlink 1.6s ease-in-out infinite;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.55rem, 3.5vw, 2.55rem);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 14px;
+      background: linear-gradient(135deg, #fff 30%, var(--green-300));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-sub {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin-bottom: 30px;
+    }
+    .hero-pills { display: flex; flex-wrap: wrap; gap: 10px; }
+    .hero-pill {
+      background: rgba(255,255,255,0.055);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 99px;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       CONTENIDO PRINCIPAL
+    ═══════════════════════════════════════════════ */
+    main {
+      flex: 1;
+      padding: 46px 56px 64px;
+      max-width: 1020px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       NOTA INTRODUCTORIA (RBD)
+    ═══════════════════════════════════════════════ */
+    .intro-callout {
+      background: linear-gradient(135deg, rgba(48,184,94,0.09), rgba(30,92,48,0.07));
+      border: 1px solid rgba(48,184,94,0.28);
+      border-radius: var(--radius-lg);
+      padding: 26px 30px;
+      margin-bottom: 50px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.6s ease-out 0.1s both;
+    }
+    .intro-callout::before {
+      content: '🔑';
+      position: absolute;
+      right: 24px; top: 18px;
+      font-size: 2.4rem;
+      opacity: 0.18;
+    }
+    .intro-callout h2 {
+      font-size: 1rem;
+      color: var(--green-300);
+      font-weight: 700;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .intro-callout p {
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      line-height: 1.72;
+    }
+    .rbd-highlight {
+      display: inline-block;
+      background: var(--green-700);
+      color: #fff;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 1px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.95em;
+    }
+
+    /* ═══════════════════════════════════════════════
+       SECCIONES DE FASE
+    ═══════════════════════════════════════════════ */
+    .phase-section {
+      margin-bottom: 64px;
+      animation: fadeUp 0.6s ease-out both;
+    }
+    .phase-section:nth-child(2) { animation-delay: 0.1s; }
+    .phase-section:nth-child(3) { animation-delay: 0.15s; }
+    .phase-section:nth-child(4) { animation-delay: 0.2s; }
+    .phase-section:nth-child(5) { animation-delay: 0.25s; }
+    .phase-section:nth-child(6) { animation-delay: 0.3s; }
+
+    .phase-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 26px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .phase-badge {
+      flex-shrink: 0;
+      width: 52px; height: 52px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+    .phase-badge-1 { background: linear-gradient(135deg, #0f2d18, #1e5c30); box-shadow: 0 4px 16px rgba(30,92,48,0.5); }
+    .phase-badge-2 { background: linear-gradient(135deg, #1a3d10, #3a8c20); box-shadow: 0 4px 16px rgba(58,140,32,0.35); }
+    .phase-badge-dict { background: linear-gradient(135deg, #2d1a00, #8c6200); box-shadow: 0 4px 16px rgba(232,185,74,0.3); }
+    .phase-badge-3 { background: linear-gradient(135deg, #1a0d4d, #5230b8); box-shadow: 0 4px 16px rgba(167,139,250,0.3); }
+    .phase-badge-4 { background: linear-gradient(135deg, #3d1a00, #c06010); box-shadow: 0 4px 16px rgba(192,96,16,0.35); }
+
+    .phase-title-block h2 {
+      font-size: 1.38rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .phase-title-block p {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════════════
+       TARJETAS DE PASO
+    ═══════════════════════════════════════════════ */
+    .step-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 26px 28px;
+      margin-bottom: 18px;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+    .step-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-active);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-2px);
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      background: var(--green-700);
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.75rem;
+      font-weight: 800;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
+    .step-title {
+      display: flex;
+      align-items: center;
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+    }
+    .step-card p, .step-card li {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.75;
+    }
+    .step-card ul, .step-card ol { padding-left: 22px; margin-top: 10px; }
+    .step-card li { margin-bottom: 8px; }
+
+    /* ═══════════════════════════════════════════════
+       RUTA DE CLICS
+    ═══════════════════════════════════════════════ */
+    .click-path {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 11px 15px;
+      margin: 13px 0;
+    }
+    .click-path .arrow { color: var(--text-muted); font-size: 0.8rem; }
+
+    kbd {
+      display: inline-flex;
+      align-items: center;
+      background: #111e14;
+      border: 1px solid rgba(48,184,94,0.32);
+      border-bottom: 2px solid rgba(48,184,94,0.55);
+      border-radius: 5px;
+      padding: 3px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.77rem;
+      font-weight: 500;
+      color: var(--accent-gold);
+      white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    /* ═══════════════════════════════════════════════
+       ALERTAS
+    ═══════════════════════════════════════════════ */
+    .alert {
+      border-radius: var(--radius-md);
+      padding: 15px 18px;
+      margin: 16px 0;
+      font-size: 0.9rem;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .alert-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: 1px; }
+    .alert-body { flex: 1; }
+    .alert-body strong { display: block; font-size: 0.86rem; font-weight: 700; margin-bottom: 4px; }
+    .alert-body p { font-size: 0.86rem; line-height: 1.6; margin: 0; }
+
+    .alert-warning  { background: rgba(232,185,74,0.07);  border: 1px solid rgba(232,185,74,0.28); }
+    .alert-warning .alert-icon, .alert-warning strong { color: var(--accent-gold); }
+    .alert-warning p { color: var(--text-secondary); }
+
+    .alert-info     { background: rgba(48,184,94,0.07);   border: 1px solid rgba(48,184,94,0.22); }
+    .alert-info .alert-icon { color: var(--green-400); }
+    .alert-info strong { color: var(--green-300); }
+    .alert-info p { color: var(--text-secondary); }
+
+    .alert-success  { background: rgba(52,209,192,0.07);  border: 1px solid rgba(52,209,192,0.22); }
+    .alert-success .alert-icon { color: var(--accent-teal); }
+    .alert-success strong { color: var(--accent-teal); }
+    .alert-success p { color: var(--text-secondary); }
+
+    .alert-danger   { background: rgba(240,82,82,0.07);   border: 1px solid rgba(240,82,82,0.22); }
+    .alert-danger .alert-icon { color: var(--accent-red); }
+    .alert-danger strong { color: var(--accent-red); }
+    .alert-danger p { color: var(--text-secondary); }
+
+    /* ═══════════════════════════════════════════════
+       DIAGRAMA DEL MODELO
+    ═══════════════════════════════════════════════ */
+    .model-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      margin: 22px 0;
+      flex-wrap: wrap;
+    }
+    .model-table-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-active);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      min-width: 165px;
+      text-align: center;
+    }
+    .model-table-box .tbl-title {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 8px;
+    }
+    .model-table-box .tbl-name { font-size: 1rem; font-weight: 800; color: var(--green-300); }
+    .model-table-box .tbl-key {
+      margin-top: 10px;
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(48,184,94,0.1);
+      border: 1px solid rgba(48,184,94,0.28);
+      border-radius: var(--radius-sm);
+      padding: 4px 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem; color: var(--accent-gold);
+    }
+    .model-connector {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 0 14px; gap: 4px;
+    }
+    .model-connector .conn-line {
+      height: 3px; width: 80px;
+      background: linear-gradient(90deg, var(--green-500), var(--green-300));
+      border-radius: 99px;
+    }
+    .model-connector .conn-labels {
+      display: flex; justify-content: space-between; width: 100%; gap: 10px;
+    }
+    .conn-badge {
+      background: var(--green-700); color: #fff;
+      font-size: 0.74rem; font-weight: 800; padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ═══════════════════════════════════════════════
+       DICCIONARIO DE DATOS
+    ═══════════════════════════════════════════════ */
+    .dict-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+      margin-top: 22px;
+    }
+    .dict-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      transition: all 0.22s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .dict-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 100%;
+      background: var(--green-500);
+      border-radius: 3px 0 0 3px;
+      opacity: 0.6;
+    }
+    .dict-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-active);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-2px);
+    }
+    .dict-card:hover::before { opacity: 1; }
+
+    .dict-varname {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .dict-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--green-300);
+      background: rgba(48,184,94,0.1);
+      border: 1px solid rgba(48,184,94,0.22);
+      padding: 3px 10px;
+      border-radius: var(--radius-sm);
+    }
+    .dict-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .dict-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+
+    /* Tabla de códigos dentro de una dict-card */
+    .dict-codes {
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .dict-code-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.82rem;
+    }
+    .dict-code-row:last-child { border-bottom: none; }
+    .dict-code-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+      min-width: 22px;
+      text-align: center;
+    }
+    .dict-code-text { color: var(--text-secondary); }
+
+    /* Pill de tabla para indicar a qué fase pertenece */
+    .dict-phase-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+    }
+    .pill-rendimiento {
+      background: rgba(167,139,250,0.12);
+      color: var(--accent-purple);
+      border: 1px solid rgba(167,139,250,0.2);
+    }
+    .pill-directorio {
+      background: rgba(52,209,192,0.1);
+      color: var(--accent-teal);
+      border: 1px solid rgba(52,209,192,0.2);
+    }
+    .pill-ambas {
+      background: rgba(48,184,94,0.1);
+      color: var(--green-300);
+      border: 1px solid rgba(48,184,94,0.2);
+    }
+
+    /* ═══════════════════════════════════════════════
+       TARJETAS DE VISUALIZACIÓN (FASE 3)
+    ═══════════════════════════════════════════════ */
+    .viz-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 18px;
+      margin: 20px 0;
+    }
+    .viz-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      transition: all 0.25s ease;
+    }
+    .viz-card:hover {
+      border-color: var(--border-active);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-3px);
+    }
+    .viz-card-header {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+    }
+    .viz-icon {
+      width: 42px; height: 42px; border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; flex-shrink: 0;
+    }
+    .viz-icon-1 { background: rgba(48,184,94,0.13); }
+    .viz-icon-2 { background: rgba(167,139,250,0.13); }
+    .viz-icon-3 { background: rgba(52,209,192,0.13); }
+    .viz-icon-4 { background: rgba(232,185,74,0.13); }
+
+    .viz-card-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+    .viz-card-subtitle { font-size: 0.73rem; color: var(--text-muted); }
+
+    .viz-context {
+      font-size: 0.83rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      padding: 10px 14px;
+      background: var(--bg-input);
+      border-radius: var(--radius-sm);
+      margin-bottom: 14px;
+      border-left: 2px solid var(--green-700);
+    }
+
+    .viz-field-list { list-style: none; padding: 0; margin: 0; }
+    .viz-field-list li {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 0;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.84rem; color: var(--text-secondary);
+    }
+    .viz-field-list li:first-child { border-top: none; }
+    .field-label {
+      font-size: 0.68rem; font-weight: 700;
+      color: var(--text-muted); text-transform: uppercase; min-width: 50px; padding-top: 2px;
+    }
+    .field-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem; color: var(--green-300);
+      background: rgba(48,184,94,0.08); padding: 1px 7px; border-radius: 4px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       TABLAS CONDICIONALES (FASE 4)
+    ═══════════════════════════════════════════════ */
+    .conditional-table {
+      width: 100%; border-collapse: collapse; margin: 14px 0;
+      font-size: 0.86rem; border-radius: var(--radius-md); overflow: hidden;
+    }
+    .conditional-table th {
+      background: var(--bg-input); color: var(--text-muted);
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.6px; padding: 10px 14px; text-align: left;
+    }
+    .conditional-table td {
+      padding: 9px 14px; border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+    }
+    .conditional-table tr:last-child td { border-bottom: none; }
+    .conditional-table tr:hover td { background: var(--bg-card-hover); }
+    .cond-col { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--green-300); }
+    .cond-val { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--accent-gold); }
+    .cond-result { font-weight: 700; color: var(--green-400); }
+    .cond-else { color: var(--text-muted); font-style: italic; }
+
+    /* ═══════════════════════════════════════════════
+       PROGRESS TRACKER
+    ═══════════════════════════════════════════════ */
+    .progress-track {
+      display: flex; align-items: center; gap: 0;
+      margin: 38px 0; padding: 18px 0; overflow-x: auto;
+    }
+    .progress-step {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; min-width: 90px;
+    }
+    .progress-dot {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 800;
+      border: 2px solid var(--border-subtle); background: var(--bg-card);
+      transition: all 0.3s;
+    }
+    .progress-dot.active {
+      background: var(--green-800);
+      border-color: var(--green-500);
+      box-shadow: 0 0 16px rgba(48,184,94,0.35);
+    }
+    .progress-label {
+      font-size: 0.67rem; color: var(--text-muted); font-weight: 600;
+      text-align: center; text-transform: uppercase; letter-spacing: 0.4px;
+    }
+    .progress-line {
+      flex: 1; height: 2px;
+      background: linear-gradient(90deg, var(--green-700), var(--border-subtle));
+      margin-top: -28px; min-width: 30px;
+    }
+
+    /* ═══════════════════════════════════════════════
+       PIE DE PÁGINA
+    ═══════════════════════════════════════════════ */
+    footer {
+      background: var(--bg-surface);
+      border-top: 1px solid var(--border-subtle);
+      padding: 26px 56px;
+      margin-left: var(--nav-width);
+    }
+    .footer-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px; max-width: 1020px;
+    }
+    .footer-text { font-size: 0.8rem; color: var(--text-muted); }
+    .footer-text strong { color: var(--text-secondary); }
+    .footer-badge { display: flex; align-items: center; gap: 8px; font-size: 0.78rem; color: var(--text-muted); }
+    .footer-badge .badge-pill {
+      background: rgba(48,184,94,0.09);
+      border: 1px solid rgba(48,184,94,0.18);
+      border-radius: 99px; padding: 3px 10px;
+      font-weight: 700; color: var(--green-300); font-size: 0.7rem;
+    }
+
+    /* ═══════════════════════════════════════════════
+       CÓDIGO INLINE & UTILIDADES
+    ═══════════════════════════════════════════════ */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85em;
+      background: rgba(48,184,94,0.09);
+      border: 1px solid rgba(48,184,94,0.2);
+      color: var(--green-300);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+    strong { color: var(--text-primary); }
+
+    /* ═══════════════════════════════════════════════
+       RESPONSIVO
+    ═══════════════════════════════════════════════ */
+    @media (max-width: 900px) {
+      #sidebar { transform: translateX(-100%); }
+      #sidebar.open { transform: translateX(0); }
+      #sidebar-toggle { display: flex; align-items: center; justify-content: center; }
+      #sidebar-overlay.active { display: block; }
+      .main-wrapper, footer { margin-left: 0; }
+      .hero { padding: 70px 22px 38px; }
+      main { padding: 30px 22px 48px; }
+      footer { padding: 22px; }
+      .model-connector .conn-line { width: 40px; }
+    }
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.45rem; }
+      .viz-grid, .dict-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════════ MENÚ LATERAL ═══════════ -->
+<aside id="sidebar" role="navigation" aria-label="Menú de navegación">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <span class="icon">📊</span> Power BI · Lab
+    </div>
+    <p class="sidebar-subtitle">Ofimática · Santo Tomás · 2026</p>
+  </div>
+
+  <nav>
+    <p class="nav-section-label">Introducción</p>
+    <a href="#inicio" class="nav-link active" id="nav-inicio">
+      <span class="nav-icon">🏠</span> Inicio
+    </a>
+
+    <p class="nav-section-label">Fases del laboratorio</p>
+    <a href="#fase1" class="nav-link" id="nav-fase1">
+      <span class="nav-icon">📥</span> Fase 1: Descarga
+      <span class="nav-badge">2 tablas</span>
+    </a>
+    <a href="#fase2" class="nav-link" id="nav-fase2">
+      <span class="nav-icon">🔗</span> Fase 2: Modelo
+      <span class="nav-badge">Relación</span>
+    </a>
+    <a href="#diccionario" class="nav-link" id="nav-dict">
+      <span class="nav-icon">📖</span> Glosario de Variables
+      <span class="nav-badge">7 vars</span>
+    </a>
+    <a href="#fase3" class="nav-link" id="nav-fase3">
+      <span class="nav-icon">📊</span> Fase 3: Dashboard
+      <span class="nav-badge">4 gráficos</span>
+    </a>
+    <a href="#fase4" class="nav-link" id="nav-fase4">
+      <span class="nav-icon">🛠️</span> Fase 4: Power Query
+      <span class="nav-badge">Pro</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    Datos públicos del<br />
+    <strong style="color: var(--green-300);">Centro de Estudios MINEDUC</strong><br />
+    <span style="color: var(--text-muted); font-size:0.67rem; margin-top:4px; display:block;">datosabiertos.mineduc.cl</span>
+  </div>
+</aside>
+
+<div id="sidebar-overlay"></div>
+<button id="sidebar-toggle" aria-label="Abrir menú">☰</button>
+
+<!-- ═══════════ CONTENIDO ═══════════ -->
+<div class="main-wrapper">
+
+  <!-- HERO -->
+  <header class="hero" id="inicio">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      Laboratorio Práctico · Power BI Desktop
+    </div>
+    <h1>Construcción de un Dashboard Educativo<br />con Datos Públicos de Chile</h1>
+    <p class="hero-sub">
+      Aprende a conectar, limpiar y visualizar datos reales del <strong>MINEDUC</strong> en Power BI.
+      Un laboratorio hands-on de 4 fases, paso a paso.
+    </p>
+    <div class="hero-pills">
+      <span class="hero-pill">📁 Datos MINEDUC reales</span>
+      <span class="hero-pill">🔑 Llave RBD</span>
+      <span class="hero-pill">🧩 Modelado relacional</span>
+      <span class="hero-pill">🧹 Power Query</span>
+      <span class="hero-pill">📈 Dashboard interactivo</span>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- TRACKER -->
+    <div class="progress-track" aria-hidden="true">
+      <div class="progress-step">
+        <div class="progress-dot active">📥</div>
+        <span class="progress-label">Descarga</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="progress-dot active">🔗</div>
+        <span class="progress-label">Modelo</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="progress-dot active">📖</div>
+        <span class="progress-label">Glosario</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="progress-dot active">📊</div>
+        <span class="progress-label">Dashboard</span>
+      </div>
+      <div class="progress-line"></div>
+      <div class="progress-step">
+        <div class="progress-dot active">🛠️</div>
+        <span class="progress-label">Power Query</span>
+      </div>
+    </div>
+
+    <!-- CALLOUT RBD -->
+    <div class="intro-callout" id="intro-rbd">
+      <h2>🔑 La Llave Maestra: el RBD</h2>
+      <p>
+        En esta práctica usaremos el <span class="rbd-highlight">RBD</span>
+        (<strong>Rol Base de Datos</strong>) como la <em>llave maestra</em> para conectar
+        nuestras tablas. El RBD es, en la práctica, el <strong>RUT de cada colegio</strong> en
+        los registros del MINEDUC. Gracias a este número único, Power BI puede saber exactamente
+        qué alumnos pertenecen a qué establecimiento. Esto es el principio fundamental del
+        <strong>modelamiento relacional de datos</strong>.
+      </p>
+    </div>
+
+    <!-- ══════════════════════════════════
+         FASE 1: DESCARGA
+    ══════════════════════════════════ -->
+    <section class="phase-section" id="fase1">
+      <div class="phase-header">
+        <div class="phase-badge phase-badge-1">📥</div>
+        <div class="phase-title-block">
+          <h2>FASE 1: Descarga de Datos desde el MINEDUC</h2>
+          <p>Obtener las fuentes de datos · 2 archivos CSV</p>
+        </div>
+      </div>
+
+      <article class="step-card">
+        <div class="step-title">
+          <span class="step-number">1</span>
+          Tabla 1 — Directorio Oficial de Establecimientos
+          <span style="margin-left:8px; font-size:0.73rem; color:var(--text-muted); font-weight:400;">(Tabla de dimensión)</span>
+        </div>
+        <p>Esta tabla contiene la información descriptiva de cada colegio: nombre, dirección, tipo de dependencia, matrícula total, etc. Es nuestra <strong>tabla de referencia</strong> que enriquecerá los gráficos con nombres comprensibles.</p>
+
+        <div class="alert alert-info" style="margin-top:15px;">
+          <span class="alert-icon">🌐</span>
+          <div class="alert-body">
+            <strong>Instrucción de búsqueda</strong>
+            <p>Abre tu navegador y busca en Google: <kbd>Centro de Estudios MINEDUC</kbd></p>
+          </div>
+        </div>
+
+        <p style="margin-top:14px; font-weight:700; font-size:0.87rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Ruta de clics:</p>
+        <div class="click-path">
+          <kbd>Datos Abiertos</kbd>
+          <span class="arrow">➜</span>
+          <kbd>Establecimientos Educacionales</kbd>
+          <span class="arrow">➜</span>
+          <kbd>Directorio de Establecimientos</kbd>
+        </div>
+
+        <div class="alert alert-success">
+          <span class="alert-icon">📦</span>
+          <div class="alert-body">
+            <strong>Descarga</strong>
+            <p>Descarga el <code>.zip</code> del año más reciente (ej. 2025). Haz clic derecho → <kbd>Extraer aquí</kbd>. Usaremos el archivo con extensión <code>.csv</code>.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="step-card">
+        <div class="step-title">
+          <span class="step-number">2</span>
+          Tabla 2 — Rendimiento Escolar por Estudiante
+          <span style="margin-left:8px; font-size:0.73rem; color:var(--text-muted); font-weight:400;">(Tabla de hechos)</span>
+        </div>
+        <p>Esta tabla contiene los registros individuales de cada alumno: RUT encriptado, género, edad, curso y resultado final. Es la que concentra <em>millones de filas</em> a nivel nacional.</p>
+
+        <div class="alert alert-info" style="margin-top:15px;">
+          <span class="alert-icon">🌐</span>
+          <div class="alert-body">
+            <strong>Instrucción de búsqueda</strong>
+            <p>Mantente en la misma página de <kbd>Datos Abiertos</kbd> del MINEDUC.</p>
+          </div>
+        </div>
+
+        <p style="margin-top:14px; font-weight:700; font-size:0.87rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px;">Ruta de clics:</p>
+        <div class="click-path">
+          <kbd>Estudiantes y Párvulos</kbd>
+          <span class="arrow">➜</span>
+          <kbd>Educación Básica y Media</kbd>
+          <span class="arrow">➜</span>
+          <kbd>Rendimiento por Estudiante</kbd>
+        </div>
+
+        <div class="alert alert-warning">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-body">
+            <strong>¡Descarga Crítica! — Lee esto antes de hacer clic</strong>
+            <p>La base nacional tiene millones de registros y colapsará tu computador. Descarga <strong>sólo una región pequeña</strong> del mismo año: <strong>Aysén</strong> o <strong>Magallanes</strong> son ideales. Descomprime el <code>.csv</code>.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ══════════════════════════════════
+         FASE 2: MODELAMIENTO
+    ══════════════════════════════════ -->
+    <section class="phase-section" id="fase2">
+      <div class="phase-header">
+        <div class="phase-badge phase-badge-2">🔗</div>
+        <div class="phase-title-block">
+          <h2>FASE 2: Carga y Modelamiento en Power BI</h2>
+          <p>Importar las tablas y crear el "cableado" entre ellas</p>
+        </div>
+      </div>
+
+      <article class="step-card">
+        <div class="step-title">
+          <span class="step-number">1</span>
+          Importar los Archivos CSV a Power BI
+        </div>
+        <ol>
+          <li>Abre <strong>Power BI Desktop</strong>.</li>
+          <li>En la barra superior haz clic en:
+            <div class="click-path" style="margin:8px 0;">
+              <kbd>Inicio</kbd><span class="arrow">➜</span><kbd>Obtener Datos</kbd><span class="arrow">➜</span><kbd>Texto / CSV</kbd>
+            </div>
+          </li>
+          <li>Selecciona el archivo del <strong>Directorio Oficial</strong> → <kbd>Cargar</kbd>.</li>
+          <li>Repite el proceso para el archivo de <strong>Rendimiento</strong> → <kbd>Cargar</kbd>.</li>
+        </ol>
+        <div class="alert alert-info" style="margin-top:15px;">
+          <span class="alert-icon">💡</span>
+          <div class="alert-body">
+            <strong>¿Qué pasó?</strong>
+            <p>Tienes dos tablas cargadas en Power BI, pero aún no están conectadas. Son como dos hojas de Excel que no se "hablan". El siguiente paso crea esa conexión.</p>
+          </div>
+        </div>
+      </article>
+
+      <article class="step-card">
+        <div class="step-title">
+          <span class="step-number">2</span>
+          El Relacionamiento — Vista de Modelo
+        </div>
+        <p>En la <strong>barra lateral izquierda</strong>, haz clic en el <strong>tercer ícono</strong> (Vista de Modelo). Verás las dos tablas como cajas flotantes.</p>
+        <div class="click-path">
+          <kbd>Barra lateral izquierda</kbd><span class="arrow">➜</span><kbd>3er ícono — Vista de Modelo</kbd>
+        </div>
+
+        <div class="alert alert-success" style="margin-top:15px; margin-bottom:20px;">
+          <span class="alert-icon">🖱️</span>
+          <div class="alert-body">
+            <strong>El Cableado — Arrastra y suelta</strong>
+            <p>Haz <strong>clic izquierdo sostenido</strong> sobre <code>RBD</code> de la tabla <strong>Directorio</strong> y arrástralo encima de <code>RBD</code> en la tabla <strong>Rendimiento</strong>.</p>
+          </div>
+        </div>
+
+        <p style="font-weight:700; font-size:0.85rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.4px; margin-bottom:14px;">Así debe quedar:</p>
+        <div class="model-diagram">
+          <div class="model-table-box">
+            <div class="tbl-title">Tabla de Dimensión</div>
+            <div class="tbl-name">📋 Directorio</div>
+            <div class="tbl-key">🔑 RBD</div>
+          </div>
+          <div class="model-connector">
+            <div class="conn-labels">
+              <span class="conn-badge">1</span>
+              <span class="conn-badge">*</span>
+            </div>
+            <div class="conn-line"></div>
+            <div style="font-size:0.63rem; color:var(--text-muted); margin-top:4px; text-align:center;">Uno a Muchos</div>
+          </div>
+          <div class="model-table-box">
+            <div class="tbl-title">Tabla de Hechos</div>
+            <div class="tbl-name">📄 Rendimiento</div>
+            <div class="tbl-key">🔑 RBD</div>
+          </div>
+        </div>
+
+        <div class="alert alert-info">
+          <span class="alert-icon">🎓</span>
+          <div class="alert-body">
+            <strong>¿Qué significa 1 y * (asterisco)?</strong>
+            <p>El <code>1</code> en Directorio y el <code>*</code> en Rendimiento significa: <em>"Un colegio tiene Muchos alumnos"</em>. Es la relación clásica Uno a Muchos (1:N) que vimos en la pizarra.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ══════════════════════════════════
+         DICCIONARIO DE DATOS
+    ══════════════════════════════════ -->
+    <section class="phase-section" id="diccionario">
+      <div class="phase-header">
+        <div class="phase-badge phase-badge-dict">📖</div>
+        <div class="phase-title-block">
+          <h2>Glosario de Variables — ¿Qué significa cada columna?</h2>
+          <p>Antes de crear gráficos, entiende qué información esconde cada campo técnico del MINEDUC</p>
+        </div>
+      </div>
+
+      <div class="alert alert-warning" style="margin-bottom:20px;">
+        <span class="alert-icon">🧠</span>
+        <div class="alert-body">
+          <strong>¿Por qué los nombres son tan crípticos?</strong>
+          <p>Las bases de datos públicas usan nombres cortos y abreviados (<code>GEN_ALU</code>, <code>COD_DEPE</code>) para ahorrar espacio en disco y acelerar las consultas. Como analistas de datos, es nuestro trabajo decodificarlos antes de construir cualquier reporte.</p>
+        </div>
+      </div>
+
+      <div class="dict-grid">
+
+        <!-- RBD -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-ambas">📋 Ambas tablas</span>
+          <div class="dict-varname">
+            <span class="dict-code">RBD</span>
+            <span class="dict-label">Rol Base de Datos</span>
+          </div>
+          <p class="dict-desc">
+            Es la <strong>cédula de identidad única</strong> de cada colegio de Chile. Funciona como el
+            RUT de un establecimiento. Es la <strong>llave maestra</strong> que conecta el Directorio
+            con la planilla de Rendimiento. Sin él, no podríamos saber qué alumnos pertenecen a qué colegio.
+          </p>
+        </div>
+
+        <!-- MRUN -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-rendimiento">📄 Tabla Rendimiento</span>
+          <div class="dict-varname">
+            <span class="dict-code">MRUN</span>
+            <span class="dict-label">Máscara RUN</span>
+          </div>
+          <p class="dict-desc">
+            Es el RUT del estudiante, pero <strong>modificado de forma confidencial</strong> por el MINEDUC
+            mediante un algoritmo secreto. Protege la identidad del menor, pero permite <strong>contar
+            alumnos únicos sin duplicados</strong>. Lo usaremos para saber cuántos estudiantes tiene nuestra región.
+          </p>
+        </div>
+
+        <!-- GEN_ALU -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-rendimiento">📄 Tabla Rendimiento</span>
+          <div class="dict-varname">
+            <span class="dict-code">GEN_ALU</span>
+            <span class="dict-label">Género del Alumno</span>
+          </div>
+          <p class="dict-desc">
+            Registra el sexo del estudiante de forma codificada con números, porque procesar enteros
+            en bases de datos es más eficiente que procesar texto.
+          </p>
+          <div class="dict-codes">
+            <div class="dict-code-row"><span class="dict-code-num">1</span><span class="dict-code-text">Masculino</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">2</span><span class="dict-code-text">Femenino</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">3</span><span class="dict-code-text">No Binario</span></div>
+            <div class="dict-code-row"><span class="dict-code-num" style="color:var(--text-muted);">0</span><span class="dict-code-text" style="color:var(--text-muted);">Indefinido / Sin información</span></div>
+          </div>
+        </div>
+
+        <!-- COD_GRADO -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-rendimiento">📄 Tabla Rendimiento</span>
+          <div class="dict-varname">
+            <span class="dict-code">COD_GRADO</span>
+            <span class="dict-label">Código de Grado</span>
+          </div>
+          <p class="dict-desc">
+            Define el nivel o curso en que está posicionado el estudiante. El código <strong>1</strong> equivale
+            a Primero Básico, el <strong>2</strong> a Segundo Básico, y así sucesivamente. Lo usaremos
+            como eje X del gráfico de líneas para ver cómo cambia la edad promedio entre cursos.
+          </p>
+        </div>
+
+        <!-- EDAD_ALU -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-rendimiento">📄 Tabla Rendimiento</span>
+          <div class="dict-varname">
+            <span class="dict-code">EDAD_ALU</span>
+            <span class="dict-label">Edad del Alumno</span>
+          </div>
+          <p class="dict-desc">
+            Corresponde a los <strong>años exactos del escolar calculados al 30 de junio</strong> del año
+            en curso. Esta fecha de corte es estándar en Chile para toda estadística educacional.
+            Siempre debemos usarla como <strong>Promedio</strong>, nunca como Suma.
+          </p>
+        </div>
+
+        <!-- COD_DEPE -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-directorio">📋 Tabla Directorio</span>
+          <div class="dict-varname">
+            <span class="dict-code">COD_DEPE</span>
+            <span class="dict-label">Código de Dependencia</span>
+          </div>
+          <p class="dict-desc">
+            Especifica bajo qué modelo administrativo se gestiona el colegio. Revela si es público,
+            subvencionado o privado.
+          </p>
+          <div class="dict-codes">
+            <div class="dict-code-row"><span class="dict-code-num">1</span><span class="dict-code-text">Corporación Municipal (Público)</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">2</span><span class="dict-code-text">Municipal DAEM (Público tradicional)</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">3</span><span class="dict-code-text">Particular Subvencionado (Mixto)</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">4</span><span class="dict-code-text">Particular Pagado (100% privado)</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">5</span><span class="dict-code-text">Corp. de Adm. Delegada (Técnicos)</span></div>
+            <div class="dict-code-row"><span class="dict-code-num">6</span><span class="dict-code-text">Servicio Local — SLEP (Nueva ed. pública)</span></div>
+          </div>
+        </div>
+
+        <!-- MAT_TOTAL -->
+        <div class="dict-card">
+          <span class="dict-phase-pill pill-directorio">📋 Tabla Directorio</span>
+          <div class="dict-varname">
+            <span class="dict-code">MAT_TOTAL</span>
+            <span class="dict-label">Matrícula Total</span>
+          </div>
+          <p class="dict-desc">
+            La <strong>suma absoluta de todos los estudiantes</strong> válidamente inscritos en ese
+            establecimiento. La usaremos en el gráfico de barras para comparar el volumen de
+            matrícula según el tipo de dependencia del colegio.
+          </p>
+        </div>
+
+      </div><!-- /dict-grid -->
+    </section>
+
+    <!-- ══════════════════════════════════
+         FASE 3: DASHBOARD
+    ══════════════════════════════════ -->
+    <section class="phase-section" id="fase3">
+      <div class="phase-header">
+        <div class="phase-badge phase-badge-3">📊</div>
+        <div class="phase-title-block">
+          <h2>FASE 3: Construcción del Dashboard Base</h2>
+          <p>Vista de Reporte · Arrastrar y soltar · 4 visualizaciones</p>
+        </div>
+      </div>
+
+      <p style="color:var(--text-secondary); font-size:0.92rem; margin-bottom:22px;">
+        Ve al <strong>primer ícono</strong> de la barra lateral izquierda (<kbd>Vista de Reporte</kbd>). Aquí construirás el lienzo visual de tu dashboard. Crea las siguientes 4 visualizaciones usando las variables del glosario anterior:
+      </p>
+
+      <div class="viz-grid">
+
+        <!-- Tarjeta 1: KPI Total -->
+        <div class="viz-card">
+          <div class="viz-card-header">
+            <div class="viz-icon viz-icon-1">🔢</div>
+            <div>
+              <div class="viz-card-title">Tarjeta KPI</div>
+              <div class="viz-card-subtitle">Total de Estudiantes Analizados</div>
+            </div>
+          </div>
+          <div class="viz-context">
+            <strong style="color:var(--green-300);">¿Para qué sirve?</strong> Muestra un número grande y simple: el total exacto de alumnos en la región descargada. Es el primer indicador que verá cualquier directivo al abrir el reporte.
+          </div>
+          <ul class="viz-field-list">
+            <li>
+              <span class="field-label">Tipo</span>
+              <span>Visualización <strong>Tarjeta</strong> (ícono <code>1,2,3</code>)</span>
+            </li>
+            <li>
+              <span class="field-label">Campo</span>
+              <span class="field-code">MRUN</span>
+              <span style="font-size:0.79rem; color:var(--text-muted); margin-left:4px;">tabla Rendimiento</span>
+            </li>
+            <li>
+              <span class="field-label">Config.</span>
+              <span>Cambia la función a <kbd>Recuento</kbd></span>
+            </li>
+          </ul>
+          <div class="alert alert-info" style="margin-top:14px; padding:10px 13px;">
+            <span class="alert-icon" style="font-size:0.9rem;">💡</span>
+            <div class="alert-body">
+              <p style="font-size:0.8rem;"><code>MRUN</code> está enmascarado, pero es único por alumno. Contar sus ocurrencias nos da el número real de estudiantes sin duplicados.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 2: Género -->
+        <div class="viz-card">
+          <div class="viz-card-header">
+            <div class="viz-icon viz-icon-2">🥧</div>
+            <div>
+              <div class="viz-card-title">Gráfico Circular</div>
+              <div class="viz-card-subtitle">Distribución por Género</div>
+            </div>
+          </div>
+          <div class="viz-context">
+            <strong style="color:var(--green-300);">¿Para qué sirve?</strong> Visualiza la proporción de hombres, mujeres y otras categorías de género en la región. Útil para análisis de brechas e inclusión educativa.
+          </div>
+          <ul class="viz-field-list">
+            <li>
+              <span class="field-label">Tipo</span>
+              <span>Gráfico <strong>Circular / Torta</strong></span>
+            </li>
+            <li>
+              <span class="field-label">Leyenda</span>
+              <span class="field-code">GEN_ALU</span>
+              <span style="font-size:0.79rem; color:var(--text-muted); margin-left:4px;">tabla Rendimiento</span>
+            </li>
+            <li>
+              <span class="field-label">Valores</span>
+              <span class="field-code">GEN_ALU</span>
+              <span style="margin-left:4px;">→ <kbd>Recuento</kbd></span>
+            </li>
+          </ul>
+          <div class="alert alert-warning" style="margin-top:14px; padding:10px 13px;">
+            <span class="alert-icon" style="font-size:0.9rem;">👀</span>
+            <div class="alert-body">
+              <p style="font-size:0.8rem;">Verás códigos <strong>1, 2 y 3</strong>. Los convertiremos en texto legible en la Fase 4.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 3: Dependencia -->
+        <div class="viz-card">
+          <div class="viz-card-header">
+            <div class="viz-icon viz-icon-3">📊</div>
+            <div>
+              <div class="viz-card-title">Gráfico de Barras</div>
+              <div class="viz-card-subtitle">Matrícula por Tipo de Colegio</div>
+            </div>
+          </div>
+          <div class="viz-context">
+            <strong style="color:var(--green-300);">¿Para qué sirve?</strong> Compara cuántos alumnos existen según el tipo de administración del colegio (público, subvencionado, privado). Revela la distribución del sistema educativo en la región.
+          </div>
+          <ul class="viz-field-list">
+            <li>
+              <span class="field-label">Tipo</span>
+              <span>Barras / Columnas <strong>agrupadas</strong></span>
+            </li>
+            <li>
+              <span class="field-label">Eje X</span>
+              <span class="field-code">COD_DEPE</span>
+              <span style="font-size:0.79rem; color:var(--text-muted); margin-left:4px;">Directorio</span>
+            </li>
+            <li>
+              <span class="field-label">Eje Y</span>
+              <span class="field-code">MAT_TOTAL</span>
+              <span style="margin-left:4px;">→ <kbd>Suma</kbd></span>
+            </li>
+          </ul>
+          <div class="alert alert-warning" style="margin-top:14px; padding:10px 13px;">
+            <span class="alert-icon" style="font-size:0.9rem;">👀</span>
+            <div class="alert-body">
+              <p style="font-size:0.8rem;">El eje X muestra códigos <strong>1–6</strong>. Los reemplazaremos por texto en la Fase 4.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tarjeta 4: Edad promedio -->
+        <div class="viz-card">
+          <div class="viz-card-header">
+            <div class="viz-icon viz-icon-4">📈</div>
+            <div>
+              <div class="viz-card-title">Gráfico de Líneas</div>
+              <div class="viz-card-subtitle">Edad Promedio por Curso ⚡</div>
+            </div>
+          </div>
+          <div class="viz-context">
+            <strong style="color:var(--green-300);">¿Para qué sirve?</strong> Muestra si la edad promedio de los alumnos sube progresivamente con el curso. Si hay saltos bruscos, puede indicar repitencia o ingreso tardío al sistema escolar.
+          </div>
+          <ul class="viz-field-list">
+            <li>
+              <span class="field-label">Tipo</span>
+              <span>Gráfico de <strong>Líneas</strong></span>
+            </li>
+            <li>
+              <span class="field-label">Eje X</span>
+              <span class="field-code">COD_GRADO</span>
+              <span style="font-size:0.79rem; color:var(--text-muted); margin-left:4px;">Rendimiento</span>
+            </li>
+            <li>
+              <span class="field-label">Eje Y</span>
+              <span class="field-code">EDAD_ALU</span>
+              <span style="margin-left:4px;">→ <kbd>Promedio</kbd></span>
+            </li>
+          </ul>
+          <div class="alert alert-danger" style="margin-top:14px; padding:10px 13px;">
+            <span class="alert-icon" style="font-size:0.9rem;">🚨</span>
+            <div class="alert-body">
+              <p style="font-size:0.8rem;"><strong>¡Vital!</strong> Cambia <code>EDAD_ALU</code> de <strong>Suma</strong> a <strong>Promedio</strong>. Sumar todas las edades de un grado da un número absurdo que no comunica nada.</p>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /viz-grid -->
+    </section>
+
+    <!-- ══════════════════════════════════
+         FASE 4: POWER QUERY
+    ══════════════════════════════════ -->
+    <section class="phase-section" id="fase4">
+      <div class="phase-header">
+        <div class="phase-badge phase-badge-4">🛠️</div>
+        <div class="phase-title-block">
+          <h2>FASE 4: El Toque Profesional en Power Query</h2>
+          <p>Columnas Condicionales · Convertir códigos en texto legible</p>
+        </div>
+      </div>
+
+      <div class="alert alert-info" style="margin-bottom:22px;">
+        <span class="alert-icon">🎯</span>
+        <div class="alert-body">
+          <strong>¿Por qué hacemos esto?</strong>
+          <p>Como aprendimos en el Glosario, las bases de datos guardan números (<code>1</code>, <code>2</code>, <code>3</code>…) en lugar de texto para ahorrar espacio y acelerar consultas. Pero un reporte ejecutivo debe mostrar texto claro. Power Query es el puente entre ambos mundos.</p>
+        </div>
+      </div>
+
+      <!-- Paso 1 -->
+      <article class="step-card">
+        <div class="step-title"><span class="step-number">1</span> Ingresar a Power Query</div>
+        <p>En la barra superior de Power BI, haz clic en:</p>
+        <div class="click-path">
+          <kbd>Inicio</kbd><span class="arrow">➜</span><kbd>Transformar Datos</kbd>
+        </div>
+        <p style="margin-top:11px;">Se abrirá una <strong>nueva ventana gris</strong> — ese es Power Query Editor, el laboratorio de transformación de datos de Power BI.</p>
+      </article>
+
+      <!-- Paso 2 -->
+      <article class="step-card">
+        <div class="step-title"><span class="step-number">2</span> Columna de Género Textual — Tabla Rendimiento</div>
+        <ol>
+          <li>En el panel izquierdo, <strong>selecciona la tabla Rendimiento</strong>.</li>
+          <li>Ve al menú superior:
+            <div class="click-path" style="margin:8px 0;">
+              <kbd>Agregar Columna</kbd><span class="arrow">➜</span><kbd>Columna Condicional</kbd>
+            </div>
+          </li>
+          <li>Configura las reglas y nómbrala <strong><code>Género Texto</code></strong>:</li>
+        </ol>
+
+        <table class="conditional-table" style="margin-top:14px;">
+          <thead>
+            <tr><th>Columna</th><th>Operador</th><th>Valor</th><th>Resultado</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="cond-col">GEN_ALU</span></td><td>es igual a</td><td><span class="cond-val">1</span></td><td><span class="cond-result">Masculino</span></td></tr>
+            <tr><td><span class="cond-col">GEN_ALU</span></td><td>es igual a</td><td><span class="cond-val">2</span></td><td><span class="cond-result">Femenino</span></td></tr>
+            <tr><td><span class="cond-col">GEN_ALU</span></td><td>es igual a</td><td><span class="cond-val">3</span></td><td><span class="cond-result">No Binario</span></td></tr>
+            <tr><td colspan="3"><span class="cond-else">De lo contrario (Else):</span></td><td><span class="cond-result">Sin Información</span></td></tr>
+          </tbody>
+        </table>
+
+        <div class="alert alert-success" style="margin-top:13px;">
+          <span class="alert-icon">✅</span>
+          <div class="alert-body">
+            <strong>Haz clic en Aceptar</strong>
+            <p>Aparecerá la nueva columna <code>Género Texto</code> al final de la tabla Rendimiento.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Paso 3 -->
+      <article class="step-card">
+        <div class="step-title"><span class="step-number">3</span> Columna de Dependencia Textual — Tabla Directorio</div>
+        <ol>
+          <li>En el panel izquierdo, <strong>selecciona la tabla Directorio</strong>.</li>
+          <li>
+            <div class="click-path" style="margin:8px 0;">
+              <kbd>Agregar Columna</kbd><span class="arrow">➜</span><kbd>Columna Condicional</kbd>
+            </div>
+          </li>
+          <li>Usa los <strong>códigos oficiales del MINEDUC</strong> para <code>COD_DEPE</code> y nómbrala <strong><code>Tipo de Colegio</code></strong>:</li>
+        </ol>
+
+        <table class="conditional-table" style="margin-top:14px;">
+          <thead>
+            <tr><th>Columna</th><th>Operador</th><th>Valor</th><th>Resultado</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="cond-col">COD_DEPE</span></td><td>es igual a</td><td><span class="cond-val">1</span></td><td><span class="cond-result">Corporación Municipal</span></td></tr>
+            <tr><td><span class="cond-col">COD_DEPE</span></td><td>es igual a</td><td><span class="cond-val">2</span></td><td><span class="cond-result">Municipal DAEM</span></td></tr>
+            <tr><td><span class="cond-col">COD_DEPE</span></td><td>es igual a</td><td><span class="cond-val">3</span></td><td><span class="cond-result">Particular Subvencionado</span></td></tr>
+            <tr><td><span class="cond-col">COD_DEPE</span></td><td>es igual a</td><td><span class="cond-val">4</span></td><td><span class="cond-result">Particular Pagado</span></td></tr>
+            <tr><td><span class="cond-col">COD_DEPE</span></td><td>es igual a</td><td><span class="cond-val">5</span></td><td><span class="cond-result">Administración Delegada</span></td></tr>
+            <tr><td><span class="cond-col">COD_DEPE</span></td><td>es igual a</td><td><span class="cond-val">6</span></td><td><span class="cond-result">Servicio Local (SLEP)</span></td></tr>
+          </tbody>
+        </table>
+
+        <div class="alert alert-success" style="margin-top:13px;">
+          <span class="alert-icon">✅</span>
+          <div class="alert-body">
+            <strong>Haz clic en Aceptar</strong>
+            <p>Nueva columna <code>Tipo de Colegio</code> creada en la tabla Directorio.</p>
+          </div>
+        </div>
+      </article>
+
+      <!-- Paso 4 -->
+      <article class="step-card">
+        <div class="step-title"><span class="step-number">4</span> Aplicar Cambios — Cerrar y Aplicar</div>
+        <p>Una vez creadas ambas columnas, regresa a Power BI con los cambios aplicados:</p>
+        <div class="click-path">
+          <kbd>Inicio</kbd><span class="arrow">➜</span><kbd>Cerrar y Aplicar</kbd>
+          <span style="font-size:0.78rem; color:var(--text-muted);">(ícono de la puerta de salida)</span>
+        </div>
+        <p style="margin-top:11px;">Power BI procesará todas las transformaciones y recargará los datos con tus nuevas columnas incluidas.</p>
+      </article>
+
+      <!-- Paso 5 -->
+      <article class="step-card">
+        <div class="step-title"><span class="step-number">5</span> Reemplazar los Campos en los Gráficos</div>
+        <ol>
+          <li>
+            <strong>Gráfico Circular (Género):</strong><br />
+            Selecciónalo → Quita <code>GEN_ALU</code> numérico → Arrastra <code style="color:var(--green-400);">Género Texto</code> a Leyenda y Valores.
+          </li>
+          <li style="margin-top:10px;">
+            <strong>Gráfico de Barras (Dependencia):</strong><br />
+            Selecciónalo → Quita <code>COD_DEPE</code> numérico del Eje X → Arrastra <code style="color:var(--green-400);">Tipo de Colegio</code>.
+          </li>
+        </ol>
+
+        <div class="alert alert-success" style="margin-top:20px;">
+          <span class="alert-icon">🏆</span>
+          <div class="alert-body">
+            <strong>¡Conclusión final para el aula!</strong>
+            <p>Las bases de datos operan con <strong>números</strong> por rendimiento informático, pero los reportes visuales se entregan con <strong>texto</strong> para la comprensión humana. Power Query es el puente entre ambos mundos. Un buen analista de datos sabe navegar los dos.</p>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+  </main>
+
+  <!-- PIE DE PÁGINA -->
+  <footer>
+    <div class="footer-inner">
+      <p class="footer-text">
+        <strong>Material pedagógico para la enseñanza de Análisis de Datos en Chile</strong><br />
+        Fuente: Centro de Estudios — Ministerio de Educación de Chile (MINEDUC)
+      </p>
+      <div class="footer-badge">
+        <span class="badge-pill">Ofimática</span>
+        <span class="badge-pill">Power BI</span>
+        <span class="badge-pill">2026</span>
+      </div>
+    </div>
+  </footer>
+
+</div><!-- /main-wrapper -->
+
+<!-- ═══════════ SCRIPTS ═══════════ -->
+<script>
+  // Toggle menú mobile
+  const sidebar   = document.getElementById('sidebar');
+  const overlay   = document.getElementById('sidebar-overlay');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+
+  toggleBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('active');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('active');
+  });
+
+  // Resaltar enlace activo según scroll
+  const sectionIds = ['inicio','fase1','fase2','diccionario','fase3','fase4'];
+  const navMap = {
+    'inicio':'nav-inicio', 'fase1':'nav-fase1', 'fase2':'nav-fase2',
+    'diccionario':'nav-dict', 'fase3':'nav-fase3', 'fase4':'nav-fase4'
+  };
+  const allNavLinks = document.querySelectorAll('.nav-link');
+
+  const observerOpts = { rootMargin: '-20% 0px -60% 0px' };
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        allNavLinks.forEach(l => l.classList.remove('active'));
+        const navId = navMap[e.target.id];
+        if (navId) document.getElementById(navId)?.classList.add('active');
+      }
+    });
+  }, observerOpts);
+
+  sectionIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) io.observe(el);
+  });
+
+  // Cerrar menú mobile al navegar
+  allNavLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
+    });
+  });
+</script>
+
+</body>
+</html>
